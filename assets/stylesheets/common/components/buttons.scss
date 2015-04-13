@@ -6,10 +6,12 @@
 }
 
 .btn-primary { // The red ones :P
-  background-color: $red-SP;
-  color: #fff;
+//  background-color: $red-SP;
+//	for neusoft platform forum
+	background-color: $blue-NP;
+	color: #fff;
 
   &:hover {
-    background-color: $red-darker-SP;
+    background-color: $blue-darker-NP;
   }
 }
