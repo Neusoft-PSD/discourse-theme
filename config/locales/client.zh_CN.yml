@@ -8,6 +8,4 @@
 zh_CN:
   js:
     last_reply_lowercase: "最后回复"
-    user:
-      last_posted: "最后一帖"
-      last_emailed: "最后一次邮寄"
+    replies_lowercase: "回复"
