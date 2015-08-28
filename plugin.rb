@@ -26,7 +26,6 @@ after_initialize do
     Rails.application.config.assets.paths.unshift File.expand_path('../assets', __FILE__)
   end
 
-
   # app/models/topic_posters_summary.rb
   TopicPostersSummary.class_eval do
     def user_ids_with_descriptions
@@ -40,22 +39,33 @@ after_initialize do
       user_ids.map { |id| avatar_lookup[id] }.compact.uniq.take(2)
     end
   end
+
   # SP customisation: add SiteCustomization to add in crawler links
-  SiteCustomization.find_or_create_by({
-    name: "SitePoint Crawler links",
-    header: '<noscript>
+  header = <<-EOS.strip_heredoc.chomp
+    <noscript>
       <a href="http://www.sitepoint.com">Articles</a>
       <a href="https://learnable.com/topics/all/book">Books</a>
       <a href="https://learnable.com/topics/all/course">Courses</a>
-    </noscript>',
-    mobile_header: '<noscript>
-      <a href="http://www.sitepoint.com">Articles</a>
-      <a href="https://learnable.com/topics/all/book">Books</a>
-      <a href="https://learnable.com/topics/all/course">Courses</a>
-    </noscript>',
-    enabled: true,
-    user_id: User.first.id
-  })
+    </noscript>
+    EOS
+
+  begin
+    if User.exists?
+      sitepoint_site_customization = SiteCustomization.find_or_create_by({
+        name: "SitePoint Crawler links",
+        header: header,
+        mobile_header: header,
+        enabled: true,
+        user_id: User.first.id,
+      })
+      # cleanup old customizations
+      SiteCustomization.where(name: sitepoint_site_customization.name).
+        where.not(id: sitepoint_site_customization.id).
+        delete_all
+    end
+  rescue ActiveRecord::StatementInvalid
+    # This happens when you run db:migrate on a database that doesn't have any tables yet.
+  end
 end
 
 
@@ -100,7 +110,7 @@ register_asset "stylesheets/mobile/compose.scss", :mobile
 
 
 #### Custom Header
-register_asset "javascripts/discourse/templates/header.js.handlebars"
+register_asset "javascripts/discourse/templates/header.hbs"
 #  item colors
 #  reset of badges back to inline display in hamburger menu
 register_asset "stylesheets/common/base/header.scss"
@@ -114,7 +124,7 @@ register_asset "stylesheets/mobile/header.scss", :mobile
 
 #### Categories Page Table [http://discourse.vim]
 #  Add "btn-primary class to "Create Topic" button
-register_asset "javascripts/discourse/templates/navigation/categories.js.handlebars"
+register_asset "javascripts/discourse/templates/navigation/categories.hbs"
 #  pill nav style
 #  Table Styles
 #  "All Categories" dropdown
@@ -126,8 +136,8 @@ register_asset "stylesheets/mobile/topic-list.scss", :mobile
 
 #### Category Topics Page Table [http://discourse.vm/category/community]
 #  Add "btn-primary" class to "Create Topic" button
-register_asset "javascripts/discourse/templates/navigation/category.js.handlebars"
-register_asset "javascripts/discourse/templates/navigation/default.js.handlebars"
+register_asset "javascripts/discourse/templates/navigation/category.hbs"
+register_asset "javascripts/discourse/templates/navigation/default.hbs"
 #  navigation style
 #  category badges
 #  row background colors
@@ -166,6 +176,8 @@ register_asset "stylesheets/desktop/topic.scss", :desktop
 #  font for staff-counters
 register_asset "stylesheets/desktop/user.scss", :desktop
 
+#### Random Hello Bar
+register_asset "stylesheets/random-hello-bar.scss"
 
 #### Component: PM Button
 #  NOTE: [JB] some serious round robin shit going on here. serious wtf...
@@ -184,7 +196,7 @@ register_asset "stylesheets/common/components/banner.css.scss"
 
 #### Admin/Users
 #  Include IP in user list
-register_asset "javascripts/admin/templates/users_list.js.handlebars"
+register_asset "javascripts/admin/templates/users-list-show.hbs"
 
 #### Topic Page [http://discourse.vm/t/feedbacks-on-the-imported-data/192]
 #  Add 'btn' class to the show Replies and Reply buttons (rounded corners)
